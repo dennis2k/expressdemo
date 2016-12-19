@@ -1,0 +1,87 @@
+<html>
+
+<head>
+    <style>
+        .selected {
+            border: 3px solid red;
+        }
+        .ml-lg {
+            margin-left: 40px;
+            color: red;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.0/angular.min.js"></script>
+    <script>
+        angular.module("app", []);
+        angular.module("app").controller("AppController", ($http) => {
+            let vm = this;
+            $http.get("/categories").then((res) => {
+                vm.categories = res.data;
+            })
+
+            vm.getProducts = (category) => {
+                vm.selectedCategory = category;
+                $http.get("/v1/products", { params: { category: category._id } }).then(res => {
+                    vm.products = res.data;
+                })
+            }
+
+            vm.addProduct = (product) => {
+                product.category = vm.selectedCategory._id;
+                $http.post("/products",product).then(res => {
+                    vm.product = {};
+                    vm.products.push(res.data);  
+                })
+            }
+
+            vm.addCategory = (category) => {
+                $http.post("/categories",category).then(res => {
+                    vm.category = {};
+                    vm.categories.push(res.data);  
+                })
+            }
+
+            vm.removeCategory = (category, idx) => {
+                $http.delete("/categories/" + category._id).then(res => {
+                    vm.categories.splice(idx,1);
+                })
+            }
+
+            vm.removeProduct = (product, idx) => {
+                $http.delete("/products/" + product._id).then(res => {
+                    vm.products.splice(idx,1);
+                })
+            }
+            return vm;
+        })
+    </script>
+</head>
+
+<body ng-app="app">
+    <div ng-controller="AppController as app">
+        <h1>Express demo</h1>
+
+        <h3>Categories</h3>
+        <p  ng-repeat="cat in app.categories"
+            ng-class="cat === app.selectedCategory ? 'selected' : ''"
+            ng-click="app.getProducts(cat)">
+
+            {{cat._id}} - {{cat.name}} <span class="ml-lg" ng-click="app.removeCategory(cat, $index)"><b>X</b></span>
+        </p>
+
+        <input type="text" ng-model="app.category.name">
+        <button ng-click="app.addCategory(app.category)">Add category</button>
+
+        <h3>Products</h3>
+        <p ng-repeat="p in app.products">
+            {{p.name}} <span class="ml-lg" ng-click="app.removeProduct(p, $index)"><b>X</b></span>
+        </p>
+
+        <div ng-if="app.selectedCategory">
+            <input type="text" ng-model="app.product.name">
+            <button ng-click="app.addProduct(app.product)">Add product</button>
+        </div>
+    </div>
+</body>
+
+</html>
